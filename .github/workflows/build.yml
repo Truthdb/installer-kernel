@@ -7,7 +7,7 @@ on:
       - '.github/workflows/build.yml'
       - 'truthdb-installer-kernel.config'
       - 'initramfs/**'
-    workflow_dispatch: {}
+  workflow_dispatch: {}
 
 jobs:
   build-and-push:
@@ -21,7 +21,7 @@ jobs:
       image: ghcr.io/truthdb/truthdb-installer-kernel-builder:latest
       credentials:
         username: ${{ github.actor }}
-        password: ${{ secrets.GHCR_READ_TOKEN }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     env:
       KERNEL_VERSION: 6.17.8
