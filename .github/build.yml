@@ -1,0 +1,68 @@
+name: Build and publish installer kernel 
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build.yml'
+      - 'truthdb-installer-kernel.config'
+      - 'initramfs/**'
+    workflow_dispatch: {}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    container:
+      image: ghcr.io/truthdb/truthdb-installer-kernel-builder:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHCR_READ_TOKEN }}
+
+    env:
+      KERNEL_VERSION: 6.17.8
+      KERNEL_CONFIG: truthdb-installer-kernel.config
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Fetch kernel source
+        run: |
+          mkdir -p kernel-src
+          cd kernel-src
+          wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz
+          tar xf linux-${KERNEL_VERSION}.tar.xz --strip-components=1
+
+      - name: Apply TruthDB installer config
+        run: |
+          cd kernel-src
+          cp ../${KERNEL_CONFIG} .config
+          make olddefconfig
+
+      - name: Build kernel
+        run: |
+          cd kernel-src
+          make -j"$(nproc)"
+
+      - name: Prepare EFI kernel binary
+        run: |
+          mkdir -p dist
+          cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64-${GITHUB_SHA}.EFI
+
+      - name: Upload EFI kernel as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: truthdb-installer-kernel-${{ github.sha }}
+          path: dist/
