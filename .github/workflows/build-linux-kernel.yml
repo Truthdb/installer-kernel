@@ -5,7 +5,7 @@ on:
     inputs:
       publish_artifact:
         description: 'Whether to upload the built EFI kernel as a workflow artifact'
-        required: false
+        required: true
         type: boolean
         default: false
 
