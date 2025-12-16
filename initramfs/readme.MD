@@ -1,1 +1,1 @@
-Initrsamfs
+Initramfs

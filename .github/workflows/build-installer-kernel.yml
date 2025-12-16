@@ -1,0 +1,13 @@
+name: Build installer kernel 
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      
+jobs:
+  build-linu-kernel:
+    uses: ./.github/workflows/build-linux-kernel.yml
+    with:
+      publish_artifact: true
+    
