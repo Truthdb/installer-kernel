@@ -1,0 +1,16 @@
+name: Validate PRs
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/build-linux-kernel.yml'
+      - '.github/workflows/build-installer-kernel.yml'
+      - '.github/workflows/validate-pr.yml'
+      - 'truthdb-installer-kernel.config'
+      - 'initramfs/**'
+
+jobs:
+    validate-build:
+        uses: ./.github/workflows/build-linux-kernel.yml
+        with:
+          publish_artifact: false

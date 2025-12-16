@@ -1,13 +1,13 @@
-name: Build and publish installer kernel 
+name: Build linux kernel
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - '.github/workflows/build.yml'
-      - 'truthdb-installer-kernel.config'
-      - 'initramfs/**'
-  workflow_dispatch: {}
+  workflow_call:
+    inputs:
+      publish_artifact:
+        description: 'Whether to upload the built EFI kernel as a workflow artifact'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-and-push:
@@ -18,13 +18,13 @@ jobs:
       packages: write
 
     container:
-      image: ghcr.io/truthdb/truthdb-installer-kernel-builder:latest
+      image: ghcr.io/truthdb/truthdb-installer-kernel-builder-image:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     env:
-      KERNEL_VERSION: 6.17.8
+      KERNEL_VERSION: 6.12
       KERNEL_CONFIG: truthdb-installer-kernel.config
 
     steps:
@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p kernel-src
           cd kernel-src
-          wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz
+          wget --no-check-certificate https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz
           tar xf linux-${KERNEL_VERSION}.tar.xz --strip-components=1
 
       - name: Apply TruthDB installer config
@@ -50,11 +50,13 @@ jobs:
           make -j"$(nproc)"
 
       - name: Prepare EFI kernel binary
+        if: ${{ inputs.publish_artifact }}
         run: |
           mkdir -p dist
           cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64-${GITHUB_SHA}.EFI
 
       - name: Upload EFI kernel as artifact
+        if: ${{ inputs.publish_artifact }}
         uses: actions/upload-artifact@v4
         with:
           name: truthdb-installer-kernel-${{ github.sha }}
