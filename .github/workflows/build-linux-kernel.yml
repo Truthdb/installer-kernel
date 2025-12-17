@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p kernel-src
           cd kernel-src
-          wget --no-check-certificate https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz
+          wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz
           tar xf linux-${KERNEL_VERSION}.tar.xz --strip-components=1
 
       - name: Apply TruthDB installer config
