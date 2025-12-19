@@ -6,8 +6,9 @@ on:
       - 'v*.*.*'
       
 jobs:
-  build-linu-kernel:
+  build-linux-kernel:
     uses: ./.github/workflows/build-linux-kernel.yml
     with:
       publish_artifact: true
+      builder_image: ghcr.io/truthdb/truthdb-installer-kernel-builder-image:${{ github.ref_name }}
     
