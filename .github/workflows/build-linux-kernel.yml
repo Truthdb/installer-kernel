@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     permissions:
-      contents: read
+      contents: write
       packages: read
 
     container:
@@ -56,3 +56,17 @@ jobs:
         run: |
           mkdir -p dist
           cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64.EFI
+
+      - name: Upload artifact
+        if: ${{ inputs.make_release }}
+        uses: actions/upload-artifact@ea3b1e17064e264e9ecb83a7a330c6a2fb1caa25
+        with:
+          name: installer-kernel-efi
+          path: dist/BOOTX64.EFI
+
+      - name: Create release
+        if: ${{ inputs.make_release }}
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
+        with:
+          files: dist/BOOTX64.EFI
+          fail_on_unmatched_files: true
