@@ -13,4 +13,4 @@ jobs:
     validate-build:
         uses: ./.github/workflows/build-linux-kernel.yml
         with:
-          publish_artifact: false
+          make_release: false
