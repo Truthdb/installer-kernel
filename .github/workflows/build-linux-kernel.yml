@@ -3,16 +3,11 @@ name: Build linux kernel
 on:
   workflow_call:
     inputs:
-      publish_artifact:
-        description: 'Whether to upload the built EFI kernel as a workflow artifact'
+      make_release:
+        description: 'Whether to create a release with the built kernel'
         required: true
         type: boolean
         default: false
-      builder_image:
-        description: 'Builder image to use (pin to a non-latest tag/digest for releases)'
-        required: false
-        type: string
-        default: 'ghcr.io/truthdb/truthdb-installer-kernel-builder-image:latest'
 
 jobs:
   build-and-push:
@@ -23,7 +18,7 @@ jobs:
       packages: read
 
     container:
-      image: ${{ inputs.builder_image }}
+      image: ghcr.io/truthdb/truthdb-installer-kernel-builder-image:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -57,14 +52,7 @@ jobs:
           make -j"$(nproc)"
 
       - name: Prepare EFI kernel binary
-        if: ${{ inputs.publish_artifact }}
+        if: ${{ inputs.make_release }}
         run: |
           mkdir -p dist
-          cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64-${GITHUB_SHA}.EFI
-
-      - name: Upload EFI kernel as artifact
-        if: ${{ inputs.publish_artifact }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: truthdb-installer-kernel-${{ github.sha }}
-          path: dist/
+          cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64.EFI
