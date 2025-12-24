@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     permissions:
-      contents: write
+      contents: read
       packages: read
 
     container:
@@ -59,14 +59,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ inputs.make_release }}
-        uses: actions/upload-artifact@ea3b1e17064e264e9ecb83a7a330c6a2fb1caa25
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: installer-kernel-efi
+          name: truthdb-installer-kernel-${{ github.sha }}
           path: dist/BOOTX64.EFI
-
-      - name: Create release
-        if: ${{ inputs.make_release }}
-        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
-        with:
-          files: dist/BOOTX64.EFI
-          fail_on_unmatched_files: true
