@@ -56,3 +56,10 @@ jobs:
         run: |
           mkdir -p dist
           cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64.EFI
+
+      - name: Upload EFI kernel artifact
+        if: ${{ inputs.make_release }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: truthdb-installer-kernel-${{ github.sha }}
+          path: dist/BOOTX64.EFI
