@@ -2,6 +2,14 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use minifb::{Key, Window, WindowOptions};
 
+// Color constants
+const BG_COLOR: u32 = 0x001F3F; // Dark blue
+const LOGO_COLOR: u32 = 0xFFFFFF; // White
+
+// Logo dimensions
+const LOGO_WIDTH: usize = 400;
+const LOGO_HEIGHT: usize = 200;
+
 /// TruthDB Installer - EFI installer executable for TruthDB
 #[derive(Parser, Debug)]
 #[command(name = "truthdb-installer")]
@@ -71,26 +79,20 @@ fn display_logo(buffer: &mut [u32], width: usize, height: usize) -> Result<()> {
     // Simple placeholder: Create a blue background with white text area
     // representing where the TruthDB logo would be displayed
     
-    // Background color (dark blue)
-    let bg_color = 0x001F3F;
-    
     // Fill background
     for pixel in buffer.iter_mut() {
-        *pixel = bg_color;
+        *pixel = BG_COLOR;
     }
     
     // Create a white rectangle in the center to represent logo area
-    let logo_width = 400;
-    let logo_height = 200;
-    let start_x = (width - logo_width) / 2;
-    let start_y = (height - logo_height) / 2;
-    let logo_color = 0xFFFFFF;
+    let start_x = (width.saturating_sub(LOGO_WIDTH)) / 2;
+    let start_y = (height.saturating_sub(LOGO_HEIGHT)) / 2;
+    let end_x = (start_x + LOGO_WIDTH).min(width);
+    let end_y = (start_y + LOGO_HEIGHT).min(height);
     
-    for y in start_y..start_y + logo_height {
-        for x in start_x..start_x + logo_width {
-            if y < height && x < width {
-                buffer[y * width + x] = logo_color;
-            }
+    for y in start_y..end_y {
+        for x in start_x..end_x {
+            buffer[y * width + x] = LOGO_COLOR;
         }
     }
     
