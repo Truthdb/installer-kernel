@@ -1,0 +1,11 @@
+# Rust
+/installer/target/
+/installer/Cargo.lock
+
+# Build artifacts
+dist/
+*.EFI
+*.efi
+
+# Kernel build
+kernel-src/

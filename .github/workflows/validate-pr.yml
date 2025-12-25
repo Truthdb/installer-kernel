@@ -8,6 +8,7 @@ on:
       - '.github/workflows/validate-pr.yml'
       - 'truthdb-installer-kernel.config'
       - 'initramfs/**'
+      - 'installer/**'
 
 jobs:
     validate-build:

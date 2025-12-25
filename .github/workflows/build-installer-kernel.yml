@@ -34,6 +34,7 @@ jobs:
           set -euo pipefail
 
           test -f dist/BOOTX64.EFI
+          test -f dist/truthdb-installer
 
           generated_notes=$(gh api -X POST "repos/$REPO/releases/generate-notes" \
             -f tag_name="$TAG" \
@@ -46,6 +47,7 @@ jobs:
           ## Installer kernel
 
           - EFI kernel: BOOTX64.EFI
+          - Installer executable: truthdb-installer
           EOF
 
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
@@ -54,5 +56,5 @@ jobs:
             gh release create "$TAG" --repo "$REPO" --title "$TAG" --notes-file release_body.md
           fi
 
-          gh release upload "$TAG" --repo "$REPO" dist/BOOTX64.EFI --clobber
+          gh release upload "$TAG" --repo "$REPO" dist/BOOTX64.EFI dist/truthdb-installer --clobber
     

@@ -51,15 +51,23 @@ jobs:
           cd kernel-src
           make -j"$(nproc)"
 
+      - name: Build installer executable
+        run: |
+          cd installer
+          cargo build --release
+
       - name: Prepare EFI kernel binary
         if: ${{ inputs.make_release }}
         run: |
           mkdir -p dist
           cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64.EFI
+          cp installer/target/release/truthdb-installer dist/truthdb-installer
 
       - name: Upload artifact
         if: ${{ inputs.make_release }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: truthdb-installer-kernel-${{ github.sha }}
-          path: dist/BOOTX64.EFI
+          path: |
+            dist/BOOTX64.EFI
+            dist/truthdb-installer
