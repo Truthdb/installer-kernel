@@ -44,7 +44,7 @@ jobs:
         run: |
           cd kernel-src
           cp ../${KERNEL_CONFIG} .config
-          make olddefconfig
+          # make olddefconfig
 
       - name: Build kernel
         run: |
