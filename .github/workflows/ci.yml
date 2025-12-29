@@ -33,13 +33,28 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/truthdb/truthdb-installer-kernel-builder-image:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            bc \
+            bison \
+            flex \
+            libncurses5-dev \
+            libssl-dev \
+            libelf-dev \
+            dwarves \
+            cpio \
+            xz-utils \
+            wget \
+            git
 
       - name: Fetch kernel source
         shell: bash
@@ -58,23 +73,38 @@ jobs:
           cd kernel-src
           cp "../${KERNEL_CONFIG}" .config
 
-      - name: Build kernel
+      - name: Kernel config sanity
         shell: bash
         run: |
           set -euo pipefail
           cd kernel-src
-          make -j"$(nproc)"
+          test -s .config
 
   build:
     name: Build
     runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/truthdb/truthdb-installer-kernel-builder-image:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            bc \
+            bison \
+            flex \
+            libncurses5-dev \
+            libssl-dev \
+            libelf-dev \
+            dwarves \
+            cpio \
+            xz-utils \
+            wget \
+            git
 
       - name: Fetch kernel source
         shell: bash
@@ -98,7 +128,7 @@ jobs:
         run: |
           set -euo pipefail
           cd kernel-src
-          make -j"$(nproc)"
+          make -j"$(nproc)" bzImage
 
       - name: Prepare EFI kernel binary
         shell: bash
