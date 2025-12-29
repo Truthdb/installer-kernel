@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  KERNEL_VERSION: 6.12
+  KERNEL_CONFIG: truthdb-installer-kernel.config
+  KERNEL_TARBALL_SHA256: b1a2562be56e42afb3f8489d4c2a7ac472ac23098f1ef1c1e40da601f54625eb
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sanity checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$KERNEL_CONFIG"
+          test -f initramfs/README.md
+          test -s "$KERNEL_CONFIG"
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            bc \
+            bison \
+            flex \
+            libncurses5-dev \
+            libssl-dev \
+            libelf-dev \
+            dwarves \
+            cpio \
+            xz-utils \
+            wget \
+            git
+
+      - name: Fetch kernel source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p kernel-src
+          cd kernel-src
+          wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz"
+          echo "${KERNEL_TARBALL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c -
+          tar xf "linux-${KERNEL_VERSION}.tar.xz" --strip-components=1
+
+      - name: Apply TruthDB installer config
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd kernel-src
+          cp "../${KERNEL_CONFIG}" .config
+
+      - name: Kernel config sanity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd kernel-src
+          test -s .config
+
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            bc \
+            bison \
+            flex \
+            libncurses5-dev \
+            libssl-dev \
+            libelf-dev \
+            dwarves \
+            cpio \
+            xz-utils \
+            wget \
+            git
+
+      - name: Fetch kernel source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p kernel-src
+          cd kernel-src
+          wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz"
+          echo "${KERNEL_TARBALL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c -
+          tar xf "linux-${KERNEL_VERSION}.tar.xz" --strip-components=1
+
+      - name: Apply TruthDB installer config
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd kernel-src
+          cp "../${KERNEL_CONFIG}" .config
+
+      - name: Build kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd kernel-src
+          make -j"$(nproc)" bzImage
+
+      - name: Prepare EFI kernel binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64.EFI
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: truthdb-installer-kernel-${{ github.sha }}
+          path: dist/BOOTX64.EFI
+          if-no-files-found: error
