@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  packages: read
 
 env:
   KERNEL_VERSION: 6.12
@@ -15,138 +14,42 @@ env:
   KERNEL_TARBALL_SHA256: b1a2562be56e42afb3f8489d4c2a7ac472ac23098f1ef1c1e40da601f54625eb
 
 jobs:
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get_version.outputs.version }}
-      tag: ${{ steps.get_tag.outputs.tag }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  release:
+    uses: Truthdb/.github/.github/workflows/standard-release.yml@issue-17-workflows
+    with:
+      project_name: installer-kernel
+      runs_on: ubuntu-24.04
+      install_packages: |
+        build-essential
+        ca-certificates
+        bc
+        bison
+        flex
+        libncurses5-dev
+        libssl-dev
+        libelf-dev
+        dwarves
+        cpio
+        xz-utils
+        wget
+        git
+      assets_list: |
+        - BOOTX64.EFI
+      files: dist/BOOTX64.EFI
+      build_script: |
+        set -euo pipefail
 
-      - name: Get tag
-        id: get_tag
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        mkdir -p kernel-src
+        cd kernel-src
+        wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz"
+        echo "${KERNEL_TARBALL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c -
+        tar xf "linux-${KERNEL_VERSION}.tar.xz" --strip-components=1
 
-      - name: Get version from tag
-        id: get_version
-        shell: bash
-        run: |
-          set -euo pipefail
-          tag="${GITHUB_REF#refs/tags/}"
-          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+        cp "../${KERNEL_CONFIG}" .config
+        test -s .config
 
-      - name: Generate release notes
-        id: release_notes
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.get_version.outputs.version }}"
-          PREV_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+        make -j"$(nproc)" bzImage
 
-          if [ -z "$PREV_TAG" ]; then
-            CHANGELOG="Initial release"
-          else
-            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --no-merges)
-          fi
-
-          cat > release_notes.md << EOF
-          ## installer-kernel ${VERSION}
-
-          ### Changes
-          $CHANGELOG
-
-          ### Assets
-
-          - BOOTX64.EFI (EFI kernel binary)
-          EOF
-
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          cat release_notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_tag.outputs.tag }}
-          release_name: Release ${{ steps.get_version.outputs.version }}
-          body: ${{ steps.release_notes.outputs.notes }}
-          draft: false
-          prerelease: false
-
-  build:
-    name: Build
-    needs: create-release
-    runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/truthdb/truthdb-installer-kernel-builder-image:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Fetch kernel source
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p kernel-src
-          cd kernel-src
-          wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz"
-          echo "${KERNEL_TARBALL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c -
-          tar xf "linux-${KERNEL_VERSION}.tar.xz" --strip-components=1
-
-      - name: Apply TruthDB installer config
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd kernel-src
-          cp "../${KERNEL_CONFIG}" .config
-
-      - name: Build kernel
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd kernel-src
-          make -j"$(nproc)"
-
-      - name: Prepare EFI kernel binary
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64.EFI
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-assets
-          path: dist/BOOTX64.EFI
-          if-no-files-found: error
-
-  upload:
-    name: Upload
-    needs: [create-release, build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: release-assets
-          path: dist
-
-      - name: Upload Release Asset - BOOTX64.EFI
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./dist/BOOTX64.EFI
-          asset_name: BOOTX64.EFI
-          asset_content_type: application/octet-stream
+        cd ..
+        mkdir -p dist
+        cp kernel-src/arch/x86/boot/bzImage dist/BOOTX64.EFI
