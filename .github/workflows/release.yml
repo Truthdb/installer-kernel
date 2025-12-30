@@ -15,7 +15,7 @@ env:
 
 jobs:
   release:
-    uses: Truthdb/.github/.github/workflows/standard-release.yml@issue-17-workflows
+    uses: Truthdb/.github/.github/workflows/standard-release.yml@workflows-v1
     with:
       project_name: installer-kernel
       runs_on: ubuntu-24.04
