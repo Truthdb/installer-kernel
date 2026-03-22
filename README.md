@@ -4,9 +4,10 @@ Builds the Linux kernel artifact used by the TruthDB installer ISO.
 
 ## What This Repo Produces
 
-The release artifact is:
+The release artifacts are:
 
 - `BOOTX64.EFI`
+- `BOOTX64.EFI.sha256`
 
 This is currently the built `bzImage` copied/renamed to `BOOTX64.EFI` for convenience in the ISO build pipeline.
 
