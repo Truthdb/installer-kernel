@@ -29,6 +29,7 @@ jobs:
           test -f "$KERNEL_CONFIG"
           test -f initramfs/README.md
           test -s "$KERNEL_CONFIG"
+          bash -n ./build_in_container.sh ./build_iso_with_local_kernel.sh
 
   test:
     name: Test
@@ -60,11 +61,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p kernel-src
-          cd kernel-src
+          rm -rf kernel-src "linux-${KERNEL_VERSION}" "linux-${KERNEL_VERSION}.tar.xz"
           wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz"
           echo "${KERNEL_TARBALL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c -
-          tar xf "linux-${KERNEL_VERSION}.tar.xz" --strip-components=1
+          tar xf "linux-${KERNEL_VERSION}.tar.xz"
+          mv "linux-${KERNEL_VERSION}" kernel-src
+          rm -f "linux-${KERNEL_VERSION}.tar.xz"
 
       - name: Apply TruthDB installer config
         shell: bash
@@ -72,6 +74,7 @@ jobs:
           set -euo pipefail
           cd kernel-src
           cp "../${KERNEL_CONFIG}" .config
+          make olddefconfig >/dev/null
 
       - name: Kernel config sanity
         shell: bash
@@ -110,11 +113,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p kernel-src
-          cd kernel-src
+          rm -rf kernel-src "linux-${KERNEL_VERSION}" "linux-${KERNEL_VERSION}.tar.xz"
           wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz"
           echo "${KERNEL_TARBALL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c -
-          tar xf "linux-${KERNEL_VERSION}.tar.xz" --strip-components=1
+          tar xf "linux-${KERNEL_VERSION}.tar.xz"
+          mv "linux-${KERNEL_VERSION}" kernel-src
+          rm -f "linux-${KERNEL_VERSION}.tar.xz"
 
       - name: Apply TruthDB installer config
         shell: bash
@@ -122,6 +126,7 @@ jobs:
           set -euo pipefail
           cd kernel-src
           cp "../${KERNEL_CONFIG}" .config
+          make olddefconfig >/dev/null
 
       - name: Build kernel
         shell: bash
