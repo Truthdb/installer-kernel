@@ -57,8 +57,11 @@ cleanup() {
 
 trap cleanup EXIT
 
+# Run as the calling user so dist/ (and kernel-src/ with KEEP_KERNEL_SRC=1)
+# are owned by them, not root. The build needs no root inside the container.
 docker run --rm -it \
   --platform=linux/amd64 \
+  --user "$(id -u):$(id -g)" \
   -e "KERNEL_VERSION=${KERNEL_VERSION}" \
   -e "KERNEL_CONFIG=${KERNEL_CONFIG_CONTAINER}" \
   -e "KERNEL_TARBALL_SHA256=${KERNEL_TARBALL_SHA256}" \
